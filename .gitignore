@@ -1,0 +1,6 @@
+# Ignore le contenu mais conserve le dossier
+./datalake/dataStorage/datanode1/*
+!./datalake/dataStorage/datanode1/.gitkeep
+
+./datalake/dataStorage/namenode/*
+!./datalake/dataStorage/namenode/.gitkeep
