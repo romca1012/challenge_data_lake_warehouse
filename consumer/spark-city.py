@@ -1,8 +1,9 @@
 from pyspark.sql import SparkSession, DataFrame
 from pyspark.sql.functions import from_json, col
-from pyspark.sql.types import StructType, StructField, StringType, TimestampType, IntegerType, DoubleType
 
-from challenge_data_lake_warehouse.config.config import configuration
+from utils.schema import get_data_schema
+
+from config.config import configuration
 
 
 def main():
@@ -20,68 +21,6 @@ def main():
 
     # Adjust the log level to minimize the console output on executors
     spark.sparkContext.setLogLevel('WARN')
-
-    # vehicle schema
-    vehicleSchema = StructType([
-        StructField("id", StringType(), True),
-        StructField("vehicle_id", StringType(), True),
-        StructField("timestamp", TimestampType(), True),
-        StructField("location", StringType(), True),
-        StructField("speed", DoubleType(), True),
-        StructField("direction", StringType(), True),
-        StructField("make", StringType(), True),
-        StructField("model", StringType(), True),
-        StructField("year", IntegerType(), True),
-        StructField("fuelType", StringType(), True),
-    ])
-
-    # gpsSchema
-    gpsSchema = StructType([
-        StructField("id", StringType(), True),
-        StructField("vehicle_id", StringType(), True),
-        StructField("timestamp", TimestampType(), True),
-        StructField("speed", DoubleType(), True),
-        StructField("direction", StringType(), True),
-        StructField("vehicleType", StringType(), True)
-    ])
-        
-    # trafficSchema
-    trafficSchema = StructType([
-        StructField("id", StringType(), True),
-        StructField("vehicle_id", StringType(), True),
-        StructField("camera_id", StringType(), True),
-        StructField("location", StringType(), True),
-        StructField("timestamp", TimestampType(), True),
-        StructField("snapshot", StringType(), True)
-    ])
-
-    # weatherSchema
-    weatherSchema = StructType([
-        StructField("id", StringType(), True),
-        StructField("vehicle_id", StringType(), True),
-        StructField("location", StringType(), True),
-        StructField("timestamp", TimestampType(), True),
-        StructField("temperature", DoubleType(), True),
-        StructField("weatherCondition", StringType(), True),
-        StructField("precipitation", DoubleType(), True),
-        StructField("windSpeed", DoubleType(), True),
-        StructField("humidity", IntegerType(), True),
-        StructField("airQualityIndex", DoubleType(), True),
-    ])
-
-    # emergencySchema
-    emergencySchema = StructType([
-        StructField("id", StringType(), True),
-        StructField("vehicle_id", StringType(), True),
-        StructField("incidentId", StringType(), True),
-        StructField("type", StringType(), True),
-        StructField("timestamp", TimestampType(), True),
-        StructField("location", StringType(), True),
-        StructField("status", StringType(), True),
-        StructField("description", StringType(), True),
-    ])
- 
-
 
     def read_kafka_topic(topic, schema):
         return (spark.readStream
@@ -106,11 +45,11 @@ def main():
                 .start())
     
     
-    vehicleDF = read_kafka_topic('vehicle_data', vehicleSchema).alias('vehicle')
-    gpsDF = read_kafka_topic('gps_data', gpsSchema).alias('gps')
-    trafficDF = read_kafka_topic('traffic_data', trafficSchema).alias('traffic')
-    weatherDF = read_kafka_topic('weather_data', weatherSchema).alias('weather')
-    emergencyDF = read_kafka_topic('emergency_data', emergencySchema).alias('emergency')
+    vehicleDF = read_kafka_topic('vehicle_data', get_data_schema('vehicle_data')).alias('vehicle')
+    gpsDF = read_kafka_topic('gps_data', get_data_schema('gps_data')).alias('gps')
+    trafficDF = read_kafka_topic('traffic_data', get_data_schema('traffic_data')).alias('traffic')
+    weatherDF = read_kafka_topic('weather_data', get_data_schema('weather_data')).alias('weather')
+    emergencyDF = read_kafka_topic('emergency_data', get_data_schema('emergency_data')).alias('emergency')
 
 
     query1 = streamWriter(vehicleDF, 's3a://sparkstreamingdata/checkpoints/vehicle_data',
