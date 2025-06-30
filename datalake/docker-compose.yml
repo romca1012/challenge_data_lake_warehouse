@@ -1,0 +1,103 @@
+##########---------- HDFS ----------##########
+services:
+
+#####----- NAMENODE -----#####
+
+  namenode:
+    image: apache/hadoop:3
+    container_name: namenode
+    hostname: namenode
+    user: root
+    environment:
+      - HADOOP_HOME=/opt/hadoop
+      - HADOOP_HEAPSIZE=1024  # Taille du heap en MB
+      - HDFS_NAMENODE_OPTS=-Xmx1024m  # Mémoire maximale pour le NameNode
+    volumes:
+      - ./dataStorage/namenode:/opt/hadoop/data/nameNode
+      - ./config/hadoop:/opt/hadoop/etc/hadoop
+      - ./scripts/start-hdfs.sh:/start-hdfs.sh
+    ports:
+      - "9870:9870"  # Interface Web NameNode
+      - "9000:9000"  # RPC NameNode
+      - "8020:8020"  # FileSystem Port
+    command: [ "/bin/bash", "/start-hdfs.sh" ]
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+    networks:
+      datamasterylab:
+        ipv4_address: 172.25.0.2
+
+# #####----- DATANODE -----#####
+
+  datanode1:
+    image: apache/hadoop:3
+    container_name: datanode1
+    hostname: datanode1
+    user: root
+    environment:
+      - HADOOP_HOME=/opt/hadoop
+      - HADOOP_HEAPSIZE=2048
+      - HDFS_DATANODE_OPTS=-Xmx2048m
+    volumes:
+      - ./dataStorage/datanode1:/opt/hadoop/data/dataNode
+      - ./config/hadoop:/opt/hadoop/etc/hadoop
+      - ./scripts/init-datanode.sh:/init-datanode.sh
+    ports:
+      - "9864:9864"  # Interface Web DataNode
+      - "9866:9866"  # DataNode IPC
+    command: [ "/bin/bash", "/init-datanode.sh" ]
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+    networks:
+      datamasterylab:
+        ipv4_address: 172.25.0.3
+
+#####----- YARN -----#####
+
+  resourcemanager:
+    image: apache/hadoop:3
+    container_name: resourcemanager
+    hostname: resourcemanager
+    user: root
+    environment:
+      - HADOOP_HOME=/opt/hadoop
+      - YARN_RESOURCEMANAGER_HEAPSIZE=2048
+      - YARN_RESOURCEMANAGER_OPTS=-Xmx2048m
+    volumes:
+      - ./config/hadoop:/opt/hadoop/etc/hadoop
+      - ./scripts/start-resourcemanager.sh:/start-resourcemanager.sh
+    ports:
+      - "8088:8088"  # Web UI YARN
+      - "8032:8032"  # RPC ResourceManager
+      - "8030:8030"  # Scheduler
+      - "8031:8031"  # Resource Tracker
+      - "8033:8033"  # Admin Interface
+    depends_on:
+      - namenode
+    command: [ "/bin/bash", "/start-resourcemanager.sh" ]
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+    networks:
+      datamasterylab:
+        ipv4_address: 172.25.0.4
+
+volumes:
+  namenode_data:
+  datanode1_data:
+
+networks:
+  datamasterylab:
+    driver: bridge
+    name: "datamasterylab"
+    ipam:
+      config:
+        - subnet: "172.25.0.0/24"  # Ajout du sous-réseau
