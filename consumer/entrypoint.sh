@@ -59,7 +59,8 @@ echo "Démarrage de $PY_FILE avec configuration optimisée"
   --conf "spark.sql.adaptive.enabled=true" \
   --conf "spark.sql.adaptive.coalescePartitions.enabled=true" \
   \
-  "/app/application/application/$PY_FILE"   >> "/app/application/logs/$(basename $PY_FILE).log" 2>&1
+  "/app/application/$PY_FILE"  
+  # >> "/app/application/logs/$(basename $PY_FILE).log" 2>&1
 
 echo "=== Job terminé ==="
 tail -f /dev/null

@@ -180,13 +180,14 @@ services:
     platform: linux/amd64
     container_name: job-runner
     volumes:
-      - ./jobs:/app/jobs
+      - ./producer:/app/
       - ./requirements.txt:/app/requirements.txt
     depends_on:
       - broker
       - spark-master
     networks:
       - datamasterylab
+    command: ["python", "produce_dataset.py"]
     tty: true
 
   spark-worker-1:
@@ -196,4 +197,6 @@ services:
     <<: *spark-common
 
 networks:
-  datamasterylab: {}
+  datamasterylab:
+    external: true
+    name: "datamasterylab"

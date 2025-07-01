@@ -8,7 +8,7 @@ x-pipeline-defaults: &pipeline-template
     - "4040:4040"
   command: ["/app/application/entrypoint.sh"]
   networks:
-    - hadoopnetwork
+    - datamasterylab
   deploy:
     resources:
       limits:
@@ -16,8 +16,7 @@ x-pipeline-defaults: &pipeline-template
         cpus: '2.0'
 
 x-common-env: &common-env
-  POSTGRES_JDBC_URL: jdbc:postgresql://postgres:5432/datamart
-  DATA_SOURCE_PATH: hdfs://namenode:9000/user/root/datasource/datasource/ # ou file:///app/datasource/
+  POSTGRES_JDBC_URL: jdbc:postgresql://postgres:5432/
   RAW_PATH: hdfs://namenode:9000/RAW/
   WAREHOUSE_PATH: hdfs://namenode:9000/user/hive/warehouse/
   WAREHOUSE_DB: process_data
@@ -73,10 +72,7 @@ services:
       TOPIC_KEY: emergency
 
 networks:
-  hadoopnetwork:
-    driver: bridge
-    name: "hadoopnetwork"
-    ipam:
-      config:
-        - subnet: "172.20.0.0/24"
+  datamasterylab:
+    external: true
+    name: "datamasterylab"
 

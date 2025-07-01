@@ -11,6 +11,6 @@ COPY requirements.txt /app/requirements.txt
 RUN pip3 install -r /app/requirements.txt
 
 WORKDIR /app
-COPY jobs/ /app/jobs/
+COPY producer/ /app/jobs/
 
 CMD [ "bash" ]

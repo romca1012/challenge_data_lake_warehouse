@@ -24,16 +24,26 @@ RUN cd /spark/jars && \
     curl -O https://repo1.maven.org/maven2/org/apache/spark/spark-sql-kafka-0-10_2.12/3.5.0/spark-sql-kafka-0-10_2.12-3.5.0.jar && \
     curl -O https://repo1.maven.org/maven2/org/apache/spark/spark-token-provider-kafka-0-10_2.12/3.5.0/spark-token-provider-kafka-0-10_2.12-3.5.0.jar
 
-# Définir la variable d'environnement pour les JARS
+# Télécharger les JARs Delta Lake
+RUN cd /spark/jars && \
+    curl -O https://repo1.maven.org/maven2/io/delta/delta-spark_2.12/3.1.0/delta-spark_2.12-3.1.0.jar && \
+    curl -O https://repo1.maven.org/maven2/io/delta/delta-storage/3.1.0/delta-storage-3.1.0.jar && \
+    curl -O https://repo1.maven.org/maven2/org/antlr/antlr4-runtime/4.9.3/antlr4-runtime-4.9.3.jar
+
+# Définir les variables d'environnement
 ENV SPARK_KAFKA_VERSION=3.3.1
 ENV SPARK_VERSION=3.5.0
+ENV DELTA_VERSION=3.1.0
+
 ENV SPARK_JARS_DIR=/spark/jars
 
 # Copier les fichiers XML de configuration Hadoop / Hive dans le répertoire Spark conf
-COPY ../config/hive-site.xml /opt/spark/conf/hive-site.xml
-COPY ../config/core-site.xml /opt/spark/conf/core-site.xml
-COPY ../config/hdfs-site.xml /opt/spark/conf/hdfs-site.xml
-COPY ../config/yarn-site.xml /opt/spark/conf/yarn-site.xml
+COPY ./config/hive-site.xml /opt/spark/conf/hive-site.xml
+COPY ./config/core-site.xml /opt/spark/conf/core-site.xml
+COPY ./config/hdfs-site.xml /opt/spark/conf/hdfs-site.xml
+COPY ./config/yarn-site.xml /opt/spark/conf/yarn-site.xml
+
+COPY ./config/spark-defaults.conf /opt/spark/conf/spark-defaults.conf
 
 # Variables d'environnement pour que Spark trouve les configs Hadoop/Hive
 ENV HADOOP_CONF_DIR=/opt/spark/conf
