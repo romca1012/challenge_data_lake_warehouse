@@ -1,7 +1,8 @@
-version: '3'
+version: '3.9'
 
 x-spark-common: &spark-common
   image: bitnami/spark:latest
+  platform: linux/amd64
   volumes:
     - ./jobs:/opt/bitnami/spark/jobs
   command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
@@ -17,7 +18,8 @@ x-spark-common: &spark-common
 
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.4.0
+    image: confluentinc/cp-zookeeper:7.5.0
+    platform: linux/amd64
     hostname: zookeeper
     container_name: zookeeper
     ports:
@@ -25,20 +27,16 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    healthcheck:
-      test: ['CMD', 'bash', '-c', "echo 'ruok' | nc localhost 2181"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - datamasterylab
+
   broker:
-    image: confluentinc/cp-server:7.4.0
+    image: confluentinc/cp-server:7.5.0
+    platform: linux/amd64
     hostname: broker
     container_name: broker
     depends_on:
-      zookeeper:
-        condition: service_healthy
+      - zookeeper
     ports:
       - "9092:9092"
       - "9101:9101"
@@ -59,18 +57,113 @@ services:
       KAFKA_CONFLUENT_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker:29092
       CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
-      CONFLUENT_METRICS_ENABLE: 'false'
+      CONFLUENT_METRICS_ENABLE: 'true'
       CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
-    healthcheck:
-      test: [ 'CMD', 'bash', '-c', "nc -z localhost 9092" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - datamasterylab
-  
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.5.0
+    platform: linux/amd64
+    hostname: schema-registry
+    container_name: schema-registry
+    depends_on:
+      - broker
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:29092'
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    networks:
+      - datamasterylab
+
+  connect:
+    image: cnfldemos/cp-server-connect-datagen:0.6.2-7.5.0
+    hostname: connect
+    container_name: connect
+    depends_on:
+      - broker
+      - schema-registry
+    ports:
+      - "8083:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: 'broker:29092'
+      CONNECT_REST_ADVERTISED_HOST_NAME: connect
+      CONNECT_GROUP_ID: compose-connect-group
+      CONNECT_CONFIG_STORAGE_TOPIC: docker-connect-configs
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
+      CONNECT_OFFSET_STORAGE_TOPIC: docker-connect-offsets
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_TOPIC: docker-connect-status
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-7.5.0.jar
+      CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+      CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
+    networks:
+      - datamasterylab
+
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:7.5.0
+    platform: linux/amd64
+    hostname: control-center
+    container_name: control-center
+    depends_on:
+      - broker
+      - schema-registry
+      - connect
+      - ksqldb-server
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker:29092'
+      CONTROL_CENTER_CONNECT_CONNECT-DEFAULT_CLUSTER: 'connect:8083'
+      CONTROL_CENTER_KSQL_KSQLDB1_URL: "http://ksqldb-server:8088"
+      CONTROL_CENTER_KSQL_KSQLDB1_ADVERTISED_URL: "http://localhost:8088"
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      PORT: 9021
+    networks:
+      - datamasterylab
+
+  ksqldb-server:
+    image: confluentinc/cp-ksqldb-server:7.5.0
+    platform: linux/amd64
+    hostname: ksqldb-server
+    container_name: ksqldb-server
+    depends_on:
+      - broker
+      - connect
+    ports:
+      - "8088:8088"
+    environment:
+      KSQL_CONFIG_DIR: "/etc/ksql"
+      KSQL_BOOTSTRAP_SERVERS: "broker:29092"
+      KSQL_HOST_NAME: ksqldb-server
+      KSQL_LISTENERS: "http://0.0.0.0:8088"
+      KSQL_CACHE_MAX_BYTES_BUFFERING: 0
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      KSQL_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      KSQL_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      KSQL_KSQL_CONNECT_URL: "http://connect:8083"
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_REPLICATION_FACTOR: 1
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: 'true'
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: 'true'
+    networks:
+      - datamasterylab
+
   spark-master:
     image: bitnami/spark:latest
+    platform: linux/amd64
     volumes:
       - ./jobs:/opt/bitnami/spark/jobs
     command: bin/spark-class org.apache.spark.deploy.master.Master
@@ -79,18 +172,28 @@ services:
       - "7077:7077"
     networks:
       - datamasterylab
+
+  job-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.jobs
+    platform: linux/amd64
+    container_name: job-runner
+    volumes:
+      - ./jobs:/app/jobs
+      - ./requirements.txt:/app/requirements.txt
+    depends_on:
+      - broker
+      - spark-master
+    networks:
+      - datamasterylab
+    tty: true
+
   spark-worker-1:
     <<: *spark-common
+
   spark-worker-2:
     <<: *spark-common
 
-  
-    
-
-#  spark-worker-3:
-#    <<: *spark-common
-#  spark-worker-4:
-#    <<: *spark-common
 networks:
-  datamasterylab:
-  
+  datamasterylab: {}
