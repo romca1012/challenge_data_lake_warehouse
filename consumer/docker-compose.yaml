@@ -1,0 +1,83 @@
+x-pipeline-defaults: &pipeline-template
+  build:
+    context: .
+    dockerfile: Dockerfile
+  volumes:
+    - ./:/app/application
+    - C:/Users/julie/Documents/M1/BIG DATA FRAMEWORK 2/datasource:/app/datasource
+  ports:
+    - "4040:4040"
+  command: ["/app/application/entrypoint.sh"]
+  networks:
+    - hadoopnetwork
+  deploy:
+    resources:
+      limits:
+        memory: 4g
+        cpus: '2.0'
+
+x-common-env: &common-env
+  POSTGRES_JDBC_URL: jdbc:postgresql://postgres:5432/datamart
+  DATA_SOURCE_PATH: hdfs://namenode:9000/user/root/datasource/datasource/ # ou file:///app/datasource/
+  RAW_PATH: hdfs://namenode:9000/RAW/
+  WAREHOUSE_PATH: hdfs://namenode:9000/user/hive/warehouse/
+  WAREHOUSE_DB: process_data
+  WAREHOUSE_DB_PATH: hdfs://namenode:9000/user/hive/warehouse/process_data.db/
+  JDBC_USER: hive
+  JDBC_PASSWORD: hive
+
+services:
+
+  vehicle_data:
+    <<: *pipeline-template
+    container_name: vehicle_data
+    environment:
+      <<: *common-env
+      PY_FILE: consumer.py
+      KAFKA_TOPIC: vehicle_data
+      TOPIC_KEY: vehicle
+
+  gps_data:
+    <<: *pipeline-template
+    container_name: gps_data
+    environment:
+      <<: *common-env
+      PY_FILE: consumer.py
+      KAFKA_TOPIC: gps_data
+      TOPIC_KEY: gps
+
+  traffic_data:
+    <<: *pipeline-template
+    container_name: traffic_data
+    environment:
+      <<: *common-env
+      PY_FILE: consumer.py
+      KAFKA_TOPIC: traffic_data
+      TOPIC_KEY: traffic
+
+  weather_data:
+    <<: *pipeline-template
+    container_name: weather_data 
+    environment:
+      <<: *common-env
+      PY_FILE: consumer.py
+      KAFKA_TOPIC: weather_data
+      TOPIC_KEY: weather
+
+  emergency_data:
+    <<: *pipeline-template
+    container_name: emergency_data
+    environment:
+      <<: *common-env
+      PY_FILE: consumer.py
+      KAFKA_TOPIC: emergency_data
+      TOPIC_KEY: emergency
+
+networks:
+  hadoopnetwork:
+    driver: bridge
+    name: "hadoopnetwork"
+    ipam:
+      config:
+        - subnet: "172.20.0.0/24"
+
