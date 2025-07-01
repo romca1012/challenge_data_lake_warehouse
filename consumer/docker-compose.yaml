@@ -44,41 +44,77 @@ services:
       KAFKA_TOPIC: vehicle_data
       TOPIC_KEY: vehicle
 
-  # gps_data:
-  #   <<: *pipeline-template
-  #   container_name: gps_data
-  #   environment:
-  #     <<: *common-env
-  #     PY_FILE: consumer_kafka.py
-  #     KAFKA_TOPIC: gps_data
-  #     TOPIC_KEY: gps
+  gps_data:
+    <<: *pipeline-template
+    container_name: gps_data
+    environment:
+      <<: *common-env
+      PY_FILE: consumer_kafka.py
+      KAFKA_TOPIC: gps_data
+      TOPIC_KEY: gps
 
-  # traffic_data:
-  #   <<: *pipeline-template
-  #   container_name: traffic_data
-  #   environment:
-  #     <<: *common-env
-  #     PY_FILE: consumer_kafka.py
-  #     KAFKA_TOPIC: traffic_data
-  #     TOPIC_KEY: traffic
+  gps_data2:
+    <<: *pipeline-template
+    container_name: gps_data2
+    environment:
+      <<: *common-env
+      PY_FILE: consumer_hdfs.py
+      KAFKA_TOPIC: gps_data
+      TOPIC_KEY: gps
 
-  # weather_data:
-  #   <<: *pipeline-template
-  #   container_name: weather_data 
-  #   environment:
-  #     <<: *common-env
-  #     PY_FILE: consumer_kafka.py
-  #     KAFKA_TOPIC: weather_data
-  #     TOPIC_KEY: weather
+  traffic_data:
+    <<: *pipeline-template
+    container_name: traffic_data
+    environment:
+      <<: *common-env
+      PY_FILE: consumer_kafka.py
+      KAFKA_TOPIC: traffic_data
+      TOPIC_KEY: traffic
 
-  # emergency_data:
-  #   <<: *pipeline-template
-  #   container_name: emergency_data
-  #   environment:
-  #     <<: *common-env
-  #     PY_FILE: consumer_kafka.py
-  #     KAFKA_TOPIC: emergency_data
-  #     TOPIC_KEY: emergency
+  traffic_data2:
+    <<: *pipeline-template
+    container_name: traffic_data2
+    environment:
+      <<: *common-env
+      PY_FILE: consumer_hdfs.py
+      KAFKA_TOPIC: traffic_data
+      TOPIC_KEY: traffic
+
+  weather_data:
+    <<: *pipeline-template
+    container_name: weather_data 
+    environment:
+      <<: *common-env
+      PY_FILE: consumer_kafka.py
+      KAFKA_TOPIC: weather_data
+      TOPIC_KEY: weather
+
+  weather_data2:
+    <<: *pipeline-template
+    container_name: weather_data2
+    environment:
+      <<: *common-env
+      PY_FILE: consumer_hdfs.py
+      KAFKA_TOPIC: weather_data
+      TOPIC_KEY: weather
+
+  emergency_data:
+    <<: *pipeline-template
+    container_name: emergency_data
+    environment:
+      <<: *common-env
+      PY_FILE: consumer_kafka.py
+      KAFKA_TOPIC: emergency_data
+      TOPIC_KEY: emergency
+
+  emergency_data2:
+    <<: *pipeline-template
+    container_name: emergency_data2
+    environment:
+      <<: *common-env
+      PY_FILE: consumer_hdfs.py
+      KAFKA_TOPIC: emergency_data
+      TOPIC_KEY: emergency
 
 networks:
   datamasterylab:
