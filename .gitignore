@@ -7,5 +7,4 @@ dataStorage/dataMart/**
 !dataStorage/dataWarehouse/.gitkeep
 !dataStorage/dataMart/.gitkeep
 
-dataStorage/**
 
