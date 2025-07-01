@@ -3,8 +3,8 @@ version: '3.9'
 x-spark-common: &spark-common
   image: bitnami/spark:latest
   platform: linux/amd64
-  volumes:
-    - ./jobs:/opt/bitnami/spark/jobs
+  # volumes:
+  #   - ./jobs:/opt/bitnami/spark/jobs
   command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
   depends_on:
     - spark-master
@@ -164,8 +164,8 @@ services:
   spark-master:
     image: bitnami/spark:latest
     platform: linux/amd64
-    volumes:
-      - ./jobs:/opt/bitnami/spark/jobs
+    # volumes:
+    #   - ./jobs:/opt/bitnami/spark/jobs
     command: bin/spark-class org.apache.spark.deploy.master.Master
     ports:
       - "9090:8080"
