@@ -30,10 +30,10 @@ ENV SPARK_VERSION=3.5.0
 ENV SPARK_JARS_DIR=/spark/jars
 
 # Copier les fichiers XML de configuration Hadoop / Hive dans le répertoire Spark conf
-COPY config/hive-site.xml /opt/spark/conf/hive-site.xml
-COPY config/core-site.xml /opt/spark/conf/core-site.xml
-COPY config/hdfs-site.xml /opt/spark/conf/hdfs-site.xml
-COPY config/yarn-site.xml /opt/spark/conf/yarn-site.xml
+COPY ../config/hive-site.xml /opt/spark/conf/hive-site.xml
+COPY ../config/core-site.xml /opt/spark/conf/core-site.xml
+COPY ../config/hdfs-site.xml /opt/spark/conf/hdfs-site.xml
+COPY ../config/yarn-site.xml /opt/spark/conf/yarn-site.xml
 
 # Variables d'environnement pour que Spark trouve les configs Hadoop/Hive
 ENV HADOOP_CONF_DIR=/opt/spark/conf
@@ -41,7 +41,7 @@ ENV HIVE_CONF_DIR=/opt/spark/conf
 ENV SPARK_CONF_DIR=/opt/spark/conf
 
 # Copier les fichiers de l'application
-COPY ../ /app/application
+COPY ./ /app/application
 
 # Définir le répertoire de travail
 WORKDIR /app

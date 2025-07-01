@@ -3,8 +3,7 @@ set -e
 
 export SPARK_JAVA_OPTS="-Xmx1g -Xms512m"
 
-MASTER=yarn
-# local[*] ou yarn
+MASTER=local[*]
 MODE=client
 
 SPARK_EXECUTOR_MEMORY=2g
@@ -25,14 +24,6 @@ SPARK_SQL_CASE_SENSITIVE="true"
 
 JARS_PATH="/spark/jars"
 JARS=$(find "$JARS_PATH" -name "*.jar" | paste -sd "," -)
-
-echo "=== Configuration Spark optimisée ==="
-echo "Ressources disponibles: ~5GB RAM, 6-7 coeurs CPU"
-echo "Configuration:"
-echo "  - Driver: ${SPARK_DRIVER_MEMORY} + ${SPARK_DRIVER_OVERHEAD} overhead"
-echo "  - Executors: ${SPARK_EXECUTOR_INSTANCES}x (${SPARK_EXECUTOR_MEMORY} + ${SPARK_EXECUTOR_OVERHEAD} overhead)"
-echo "  - CPU: ${SPARK_DRIVER_CORES} (driver) + ${SPARK_EXECUTOR_INSTANCES}x${SPARK_EXECUTOR_CORES} (executors) = $((SPARK_DRIVER_CORES + SPARK_EXECUTOR_INSTANCES * SPARK_EXECUTOR_CORES)) coeurs total"
-echo "  - Mémoire totale estimée: ~4GB (dans les limites des 5GB disponibles)"
 
 mkdir -p /app/log/writer
 
@@ -68,7 +59,7 @@ echo "Démarrage de $PY_FILE avec configuration optimisée"
   --conf "spark.sql.adaptive.enabled=true" \
   --conf "spark.sql.adaptive.coalescePartitions.enabled=true" \
   \
-  "/app/application/application/$PY_FILE"   >> "/app/application/logs/$(basename $PY_FILE)_master_$MASTER.log" 2>&1
+  "/app/application/application/$PY_FILE"   >> "/app/application/logs/$(basename $PY_FILE).log" 2>&1
 
 echo "=== Job terminé ==="
 tail -f /dev/null

@@ -1,0 +1,168 @@
+##########---------- HDFS ----------##########
+services:
+
+#####----- NAMENODE -----#####
+
+  namenode:
+    image: apache/hadoop:3
+    container_name: namenode
+    hostname: namenode
+    user: root
+    environment:
+      - HADOOP_HOME=/opt/hadoop
+      - HADOOP_HEAPSIZE=1024  # Taille du heap en MB
+      - HDFS_NAMENODE_OPTS=-Xmx1024m  # Mémoire maximale pour le NameNode
+    volumes:
+      - ./dataLake/namenode:/opt/hadoop/data/nameNode
+      - ./config/hadoop:/opt/hadoop/etc/hadoop
+      - ./scripts/start-hdfs.sh:/start-hdfs.sh
+    ports:
+      - "9870:9870"  # Interface Web NameNode
+      - "9000:9000"  # RPC NameNode
+      - "8020:8020"  # FileSystem Port
+    command: [ "/bin/bash", "/start-hdfs.sh" ]
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+    networks:
+      datamasterylab:
+        ipv4_address: 172.25.0.2
+
+# #####----- DATANODE -----#####
+
+  datanode1:
+    image: apache/hadoop:3
+    container_name: datanode1
+    hostname: datanode1
+    user: root
+    environment:
+      - HADOOP_HOME=/opt/hadoop
+      - HADOOP_HEAPSIZE=2048
+      - HDFS_DATANODE_OPTS=-Xmx2048m
+    volumes:
+      - ./dataLake/datanode1:/opt/hadoop/data/dataNode
+      - ./config/hadoop:/opt/hadoop/etc/hadoop
+      - ./scripts/init-datanode.sh:/init-datanode.sh
+    ports:
+      - "9864:9864"  # Interface Web DataNode
+      - "9866:9866"  # DataNode IPC
+    command: [ "/bin/bash", "/init-datanode.sh" ]
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+    networks:
+      datamasterylab:
+        ipv4_address: 172.25.0.3
+
+##########---------- POSTGRES ----------##########
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    hostname: postgres
+    environment:
+      POSTGRES_DB: metastore
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
+    volumes:
+      - ./dataMart:/var/lib/postgresql/data
+      - ./config/postgres:/etc/postgresql
+    ports:
+      - "5432:5432"
+    networks:
+      datamasterylab:
+        ipv4_address: 172.25.0.4
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive -d metastore"]
+      interval: 10s
+      retries: 5
+
+##########---------- HIVE ----------##########
+
+  metastore:
+    image: apache/hive:3.1.3
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    container_name: metastore
+    hostname: metastore
+    environment:
+      # Configuration de base de Hive
+      HADOOP_HOME: /opt/hadoop
+      HIVE_HOME: /opt/hive
+      HADOOP_CONF_DIR: /opt/hadoop/etc/hadoop
+      HIVE_CONF_DIR: /opt/hive/conf
+
+      DB_DRIVER: postgres
+      SCHEMA_COMMAND: upgradeSchema
+      IS_RESUME: true
+      SERVICE_NAME: 'metastore'
+      SERVICE_OPTS: '-Xmx1G -Djavax.jdo.option.ConnectionDriverName=org.postgresql.Driver
+                     -Djavax.jdo.option.ConnectionURL=jdbc:postgresql://postgres:5432/metastore
+                     -Djavax.jdo.option.ConnectionUserName=hive
+                     -Djavax.jdo.option.ConnectionPassword=hive'
+    ports:
+        - '9083:9083'
+    volumes:
+      # Configuration et données de Hive
+      - ./config/hive:/opt/hive/conf
+      - ./dataWarehouse/data:/opt/hive/data/warehouse
+      - ./dataWarehouse/logs:/opt/hive/logs
+      # Driver PostgreSQL et configuration Hadoop
+      - ./config/hive/lib/postgresql-42.2.5.jar:/opt/hive/lib/postgresql-42.2.5.jar
+      - ./config/hadoop:/opt/hadoop/etc/hadoop
+      # Script de démarrage personnalisé
+      # - ./scripts/start-hive.sh:/start-hive.sh
+    command: ["/bin/bash", "/opt/hive/bin/hive --service metastore"]
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: "2g"
+    networks:
+      datamasterylab:
+        ipv4_address: 172.25.0.5
+
+  hiveserver2:
+    image: apache/hive:3.1.3
+    depends_on:
+      - metastore
+    restart: unless-stopped
+    container_name: hiveserver2
+    environment:
+      HIVE_SERVER2_THRIFT_PORT: 10000
+      SERVICE_OPTS: '-Xmx1G -Dhive.metastore.uris=thrift://metastore:9083'
+      IS_RESUME: 'true'
+      SERVICE_NAME: 'hiveserver2'
+    ports:
+      - '10000:10000'
+      - '10002:10002'
+    volumes:
+      - ./dataWarehouse/data:/opt/hive/data/warehouse
+    command: ["/bin/bash", "/opt/hive/bin/hive --service hiveserver2"]
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: "2g"
+    networks:
+      datamasterylab:
+        ipv4_address: 172.25.0.6
+
+volumes:
+  namenode_data:
+  datanode1_data:
+  hive_data:
+  postgres_data:
+
+networks:
+  datamasterylab:
+    driver: bridge
+    name: "datamasterylab"
+    ipam:
+      config:
+        - subnet: "172.25.0.0/24"  # Ajout du sous-réseau
