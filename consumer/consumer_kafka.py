@@ -50,7 +50,7 @@ def main(kafka_topic: str, topic_key: str):
         logger.info(f"Starting stream writer with checkpoint at {checkpointFolder} and output path {output}")
         query = (
             input.writeStream
-            .format('parquet')
+            .format('delta')
             .option('checkpointLocation', checkpointFolder)
             .option('path', output)
             .outputMode('append')

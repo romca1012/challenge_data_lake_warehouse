@@ -4,8 +4,8 @@ x-pipeline-defaults: &pipeline-template
     dockerfile: Dockerfile
   volumes:
     - ./:/app/application
-  ports:
-    - "4040:4040"
+  # ports:
+  #   - "4040:4040"
   command: ["/app/application/entrypoint.sh"]
   networks:
     - datamasterylab
