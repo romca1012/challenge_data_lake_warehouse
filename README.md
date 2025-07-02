@@ -24,7 +24,7 @@ Ce projet simule un pipeline de données temps réel pour une ville intelligente
 ## Étapes principales
 
 1. Lancer l’environnement complet avec Docker (Kafka, Hive, Spark, HDFS).
-2. Exécuter le simulateur Python (`main.py`) pour injecter des données dans Kafka.
+2. Exécuter le simulateur Python (`producer_dataset.py`) pour injecter des données dans Kafka.
 3. Lancer le job Spark pour lire, traiter et stocker les données dans HDFS.
 4. Vérifier les tables Hive créées (via Beeline ou Hue si configuré).
 5. Connecter Power BI à Hive ou aux fichiers Parquet en HDFS (via un connecteur JDBC ou un export).

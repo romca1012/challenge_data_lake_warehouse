@@ -1,25 +1,25 @@
-##########---------- HDFS ----------##########
 services:
 
-#####----- NAMENODE -----#####
-
+  #####----- NAMENODE -----#####
   namenode:
+    platform: linux/amd64
     image: apache/hadoop:3
     container_name: namenode
     hostname: namenode
     user: root
     environment:
       - HADOOP_HOME=/opt/hadoop
-      - HADOOP_HEAPSIZE=1024  # Taille du heap en MB
-      - HDFS_NAMENODE_OPTS=-Xmx1024m  # Mémoire maximale pour le NameNode
+      - HADOOP_HEAPSIZE=1024
+      - HDFS_NAMENODE_OPTS=-Xmx1024m
     volumes:
       - ./dataLake/namenode:/opt/hadoop/data/nameNode
       - ./config/hadoop:/opt/hadoop/etc/hadoop
       - ./scripts/start-hdfs.sh:/start-hdfs.sh
+      - ./scripts/starter.sh:/opt/starter.sh
     ports:
-      - "9870:9870"  # Interface Web NameNode
-      - "9000:9000"  # RPC NameNode
-      - "8020:8020"  # FileSystem Port
+      - "9870:9870"
+      - "9000:9000"
+      - "8020:8020"
     command: [ "/bin/bash", "/start-hdfs.sh" ]
     deploy:
       resources:
@@ -27,12 +27,11 @@ services:
           cpus: '1'
           memory: 2G
     networks:
-      datamasterylab:
-        ipv4_address: 172.25.0.2
+      - datamasterylab
 
-# #####----- DATANODE -----#####
-
+  #####----- DATANODE -----#####
   datanode1:
+    platform: linux/amd64
     image: apache/hadoop:3
     container_name: datanode1
     hostname: datanode1
@@ -45,9 +44,10 @@ services:
       - ./dataLake/datanode1:/opt/hadoop/data/dataNode
       - ./config/hadoop:/opt/hadoop/etc/hadoop
       - ./scripts/init-datanode.sh:/init-datanode.sh
+      - ./scripts/starter.sh:/opt/starter.sh
     ports:
-      - "9864:9864"  # Interface Web DataNode
-      - "9866:9866"  # DataNode IPC
+      - "9864:9864"
+      - "9866:9866"
     command: [ "/bin/bash", "/init-datanode.sh" ]
     deploy:
       resources:
@@ -55,11 +55,9 @@ services:
           cpus: '1'
           memory: 2G
     networks:
-      datamasterylab:
-        ipv4_address: 172.25.0.3
+      - datamasterylab
 
-##########---------- POSTGRES ----------##########
-
+  ##########---------- POSTGRES ----------##########
   postgres:
     image: postgres:latest
     container_name: postgres
@@ -74,8 +72,7 @@ services:
     ports:
       - "5432:5432"
     networks:
-      datamasterylab:
-        ipv4_address: 172.25.0.4
+      - datamasterylab
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U hive -d metastore"]
       interval: 10s
@@ -86,9 +83,10 @@ services:
           memory: 1g
           cpus: '0.5'
 
-##########---------- HIVE ----------##########
+  ##########---------- HIVE ----------##########
 
   metastore:
+    platform: linux/amd64
     image: apache/hive:3.1.3
     depends_on:
       postgres:
@@ -129,11 +127,16 @@ services:
         limits:
           cpus: "1"
           memory: "2g"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9083"]
+      interval: 10s
+      retries: 5
     networks:
-      datamasterylab:
-        ipv4_address: 172.25.0.5
-
+      - datamasterylab
+      
+      
   hiveserver2:
+    platform: linux/amd64
     image: apache/hive:3.1.3
     depends_on:
       metastore:
@@ -157,8 +160,7 @@ services:
           cpus: "1"
           memory: "2g"
     networks:
-      datamasterylab:
-        ipv4_address: 172.25.0.6
+      - datamasterylab
 
 volumes:
   namenode_data:
@@ -168,9 +170,5 @@ volumes:
 
 networks:
   datamasterylab:
-    # driver: bridge
     external: true
     name: "datamasterylab"
-    ipam:
-      config:
-        - subnet: "172.25.0.0/24"  # Ajout du sous-réseau

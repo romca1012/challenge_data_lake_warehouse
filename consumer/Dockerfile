@@ -2,14 +2,10 @@ FROM spark:3.5.0-python3
 
 USER root
 
-# Mettre à jour et installer les dépendances nécessaires
-RUN apt-get update && apt-get install -y \
-    gcc \
-    libpq-dev \
-    curl && \
+# Installer netcat + dépendances en une seule étape
+RUN apt-get update && apt-get install -y netcat gcc libpq-dev curl && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
 # Installer les packages Python nécessaires
 RUN pip install psycopg2-binary numpy
 
