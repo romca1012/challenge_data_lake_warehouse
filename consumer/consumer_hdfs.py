@@ -44,8 +44,8 @@ def main(kafka_topic: str, topic_key: str):
         """Écrit le streaming dans une table Delta enregistrée dans Hive Metastore"""
         logger.info(f"Writing to Delta table registered in Hive: {table_name}")
         
-        # Création de la database si elle n'existe pas
-        spark.sql(f"CREATE DATABASE IF NOT EXISTS process_data.db")
+        database_name = "process_data"
+        spark.sql(f"CREATE DATABASE IF NOT EXISTS {database_name}")
         
         # Configuration pour l'écriture Delta avec optimisations PowerBI
         query = (
@@ -58,9 +58,8 @@ def main(kafka_topic: str, topic_key: str):
             .start()
         )
         
-        # Enregistrement de la table dans Hive Metastore
         spark.sql(f"""
-            CREATE TABLE IF NOT EXISTS {table_name}
+            CREATE TABLE IF NOT EXISTS {database_name}.{table_name}
             USING DELTA
             LOCATION '{delta_path}{table_name}'
         """)

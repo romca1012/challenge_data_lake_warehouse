@@ -27,8 +27,7 @@ services:
           cpus: '1'
           memory: 2G
     networks:
-      datamasterylab:
-        ipv4_address: 172.25.0.2
+      - datamasterylab
 
 # #####----- DATANODE -----#####
 
@@ -55,8 +54,7 @@ services:
           cpus: '1'
           memory: 2G
     networks:
-      datamasterylab:
-        ipv4_address: 172.25.0.3
+      - datamasterylab
 
 ##########---------- POSTGRES ----------##########
 
@@ -74,8 +72,7 @@ services:
     ports:
       - "5432:5432"
     networks:
-      datamasterylab:
-        ipv4_address: 172.25.0.4
+      - datamasterylab
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U hive -d metastore"]
       interval: 10s
@@ -130,8 +127,7 @@ services:
           cpus: "1"
           memory: "2g"
     networks:
-      datamasterylab:
-        ipv4_address: 172.25.0.5
+      - datamasterylab
 
   hiveserver2:
     image: apache/hive:3.1.3
@@ -157,8 +153,7 @@ services:
           cpus: "1"
           memory: "2g"
     networks:
-      datamasterylab:
-        ipv4_address: 172.25.0.6
+      - datamasterylab
 
 volumes:
   namenode_data:
@@ -171,6 +166,3 @@ networks:
     # driver: bridge
     external: true
     name: "datamasterylab"
-    ipam:
-      config:
-        - subnet: "172.25.0.0/24"  # Ajout du sous-réseau
